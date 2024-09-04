@@ -502,8 +502,8 @@ typedef enum {
     MODE_LISTEN_ONLY,
     MODE_SLEEP,
     MODE_LOOPBACK,
-    MODE_NORMAL,
-} mcp2515_mode_t
+    MODE_NORMAL
+} mcp2515_mode_t;
 
 typedef struct {
     SPI_HandleTypeDef *spi_handle; 
