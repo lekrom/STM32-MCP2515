@@ -11,7 +11,6 @@
 
 #define SPI_TIMEOUT             10
 
-
 void startSPI(mcp2515_t *mcp2515) {	
     HAL_GPIO_WritePin(mcp2515->cs_pin.gpio_port, mcp2515->cs_pin.gpio_pin, GPIO_PIN_RESET);
 }
@@ -316,7 +315,7 @@ CAN_Error MCP_setMode(mcp2515_t *mcp2515,mcp2515_mode_t mode) {
 
     CAN_Error myError;
 
-    switch (mcp2515->mode) {
+    switch (mode) {
         case MODE_LISTEN_ONLY: myError=setMode(mcp2515,CANCTRL_REQOP_LISTENONLY);
         break;
         case MODE_LOOPBACK: myError=setMode(mcp2515,CANCTRL_REQOP_LOOPBACK);

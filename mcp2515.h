@@ -371,6 +371,7 @@ typedef enum {
 static const uint8_t N_TXBUFFERS = 3;
 static const uint8_t N_RXBUFFERS = 2;
 
+/*
 struct TXBn_REGS {
 	REGISTER CTRL;
 	REGISTER SIDH;
@@ -382,7 +383,7 @@ struct RXBn_REGS {
 	REGISTER SIDH;
 	REGISTER DATA;
 	CANINTF  CANINTF_RXnIF;
-} RXB[2]; //N_RXBUFFERS
+} RXB[2]; //N_RXBUFFERS*/
 
 typedef enum TXBnCTRL{
     TXB_ABTF   = 0x40,
@@ -512,7 +513,7 @@ typedef struct {
 } mcp2515_t;
 
 CAN_Error MCP_reset(mcp2515_t *mcp2515);//
-CAN_Error MCP_setMode(mcp2515_t *mcp2515,mcp2515_mode_t mode)//
+CAN_Error MCP_setMode(mcp2515_t *mcp2515,mcp2515_mode_t mode);//
 CAN_Error MCP_setBitrate(mcp2515_t *mcp2515,CAN_SPEED canSpeed);//
 CAN_Error MCP_setFilterMask(mcp2515_t *mcp2515,MASK num, uint8_t ext, uint32_t ulData);//
 CAN_Error MCP_setFilter(mcp2515_t *mcp2515,RXF num, uint8_t ext, uint32_t ulData);//
