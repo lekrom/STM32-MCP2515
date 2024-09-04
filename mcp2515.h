@@ -509,11 +509,10 @@ typedef struct {
     SPI_HandleTypeDef *spi_handle; 
     mcp2515_gpio_t cs_pin;
     CAN_CLOCK clock;
-    mcp2515_mode_t mode;
 } mcp2515_t;
 
 CAN_Error MCP_reset(mcp2515_t *mcp2515);//
-CAN_Error MCP_setMode(mcp2515_t *mcp2515)//
+CAN_Error MCP_setMode(mcp2515_t *mcp2515,mcp2515_mode_t mode)//
 CAN_Error MCP_setBitrate(mcp2515_t *mcp2515,CAN_SPEED canSpeed);//
 CAN_Error MCP_setFilterMask(mcp2515_t *mcp2515,MASK num, uint8_t ext, uint32_t ulData);//
 CAN_Error MCP_setFilter(mcp2515_t *mcp2515,RXF num, uint8_t ext, uint32_t ulData);//

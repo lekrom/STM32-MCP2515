@@ -312,7 +312,7 @@ CAN_Error MCP_reset(mcp2515_t *mcp2515)
     return ERROR_OK;
 }
 
-CAN_Error MCP_setMode(mcp2515_t *mcp2515) {
+CAN_Error MCP_setMode(mcp2515_t *mcp2515,mcp2515_mode_t mode) {
 
     CAN_Error myError;
 
