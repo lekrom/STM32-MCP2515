@@ -9,6 +9,8 @@
 #define APPLICATION_USER_INC_MCP2515_H_
 
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
+#include <string.h> 
 
 typedef unsigned char __u8;
 typedef unsigned short __u16;
@@ -490,32 +492,47 @@ typedef enum {
 	RXB0 = 0, RXB1 = 1
 } RXBn;
 
+// New - FM
+typedef struct {
+    GPIO_TypeDef *gpio_port;
+    uint16_t gpio_pin;
+} mcp2515_gpio_t;
 
-CAN_Error MCP_reset(void);//
-CAN_Error MCP_setListenOnlyMode();//
-CAN_Error MCP_setSleepMode();//
-CAN_Error MCP_setLoopbackMode();//
-CAN_Error MCP_setNormalMode();//
-CAN_Error MCP_setBitrate(CAN_SPEED canSpeed);//
-CAN_Error MCP_setBitrateClock(CAN_SPEED canSpeed, CAN_CLOCK canClock); //
-CAN_Error MCP_setFilterMask(MASK num, uint8_t ext, uint32_t ulData);//
-CAN_Error MCP_setFilter(RXF num, uint8_t ext, uint32_t ulData);//
-CAN_Error MCP_sendMessageTo(TXBn txbn, can_frame *frame);//
-CAN_Error MCP_sendMessage(can_frame *frame);//
-CAN_Error MCP_readMessageFrom(RXBn rxbn, can_frame *frame);//
-CAN_Error MCP_readMessage(can_frame *frame);//
-uint8_t MCP_checkReceive(void);//
-uint8_t MCP_checkError(void);//
-uint8_t MCP_getErrorFlags(void);//
-void MCP_clearRXnOVRFlags(void);//
-uint8_t MCP_getInterrupts(void);//
-uint8_t MCP_getInterruptMask(void);//
-void MCP_clearInterrupts(void);//
-void MCP_clearTXInterrupts(void);
-uint8_t MCP_getStatus(void);//
-void MCP_clearRXnOVR(void);//
-void MCP_clearMERR();//
-void MCP_clearERRIF();//
+typedef enum {
+    MODE_LISTEN_ONLY,
+    MODE_SLEEP,
+    MODE_LOOPBACK,
+    MODE_NORMAL,
+} mcp2515_mode_t
+
+typedef struct {
+    SPI_HandleTypeDef *spi_handle; 
+    mcp2515_gpio_t cs_pin;
+    CAN_CLOCK clock;
+    mcp2515_mode_t mode;
+} mcp2515_t;
+
+CAN_Error MCP_reset(mcp2515_t *mcp2515);//
+CAN_Error MCP_setMode(mcp2515_t *mcp2515)//
+CAN_Error MCP_setBitrate(mcp2515_t *mcp2515,CAN_SPEED canSpeed);//
+CAN_Error MCP_setFilterMask(mcp2515_t *mcp2515,MASK num, uint8_t ext, uint32_t ulData);//
+CAN_Error MCP_setFilter(mcp2515_t *mcp2515,RXF num, uint8_t ext, uint32_t ulData);//
+CAN_Error MCP_sendMessageTo(mcp2515_t *mcp2515,TXBn txbn, can_frame *frame);//
+CAN_Error MCP_sendMessage(mcp2515_t *mcp2515,can_frame *frame);//
+CAN_Error MCP_readMessageFrom(mcp2515_t *mcp2515,RXBn rxbn, can_frame *frame);//
+CAN_Error MCP_readMessage(mcp2515_t *mcp2515,can_frame *frame);//
+uint8_t MCP_checkReceive(mcp2515_t *mcp2515);//
+uint8_t MCP_checkError(mcp2515_t *mcp2515);//
+uint8_t MCP_getErrorFlags(mcp2515_t *mcp2515);//
+void MCP_clearRXnOVRFlags(mcp2515_t *mcp2515);//
+uint8_t MCP_getInterrupts(mcp2515_t *mcp2515);//
+uint8_t MCP_getInterruptMask(mcp2515_t *mcp2515);//
+void MCP_clearInterrupts(mcp2515_t *mcp2515);//
+void MCP_clearTXInterrupts(mcp2515_t *mcp2515);
+uint8_t MCP_getStatus(mcp2515_t *mcp2515);//
+void MCP_clearRXnOVR(mcp2515_t *mcp2515);//
+void MCP_clearMERR(mcp2515_t *mcp2515);//
+void MCP_clearERRIF(mcp2515_t *mcp2515);//
 
 #endif /* APPLICATION_USER_INC_MCP2515_H_ */
 

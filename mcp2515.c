@@ -6,121 +6,113 @@
  */
 
 #include "mcp2515.h"
-#include "mcp2515_consts.h"
-#include <stm32f4xx_hal.h>
-#include <string.h> //Todo: this is yucky just for the memset function
 
 /* Modify below items for your SPI configurations */
-extern SPI_HandleTypeDef        hspi4;
-#define SPI_CAN                 &hspi4
+
 #define SPI_TIMEOUT             10
-//#define MCP2515_CS_HIGH()   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_SET)
-//#define MCP2515_CS_LOW()    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET)
 
-void startSPI() {
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+
+void startSPI(mcp2515_t *mcp2515) {	
+    HAL_GPIO_WritePin(mcp2515->cs_pin.gpio_port, mcp2515->cs_pin.gpio_pin, GPIO_PIN_RESET);
 }
 
-void endSPI() {
-	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_SET);
+void endSPI(mcp2515_t *mcp2515) {
+	HAL_GPIO_WritePin(mcp2515->cs_pin.gpio_port, mcp2515->cs_pin.gpio_pin, GPIO_PIN_SET);
 }
 
-uint8_t SPI_transfer(uint8_t txByte){
-	uint8_t rxByte;
-	HAL_SPI_TransmitReceive(SPI_CAN, &txByte, &rxByte, 1, SPI_TIMEOUT);
+uint8_t SPI_transfer(mcp2515_t *mcp2515, uint8_t txByte){
+	uint8_t rxByte;	
+    HAL_SPI_TransmitReceive(mcp2515->spi_handle, &txByte, &rxByte, 1, SPI_TIMEOUT);
 	return rxByte;
 }
 
-void setRegister(uint8_t reg, uint8_t value)
+void setRegister(mcp2515_t *mcp2515,uint8_t reg, uint8_t value)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_WRITE);
-    SPI_transfer(reg);
-    SPI_transfer(value);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_WRITE);
+    SPI_transfer(mcp2515,reg);
+    SPI_transfer(mcp2515,value);
+    endSPI(mcp2515);
 }
 
-void setRegisters(uint8_t reg, uint8_t values[], uint8_t n)
+void setRegisters(mcp2515_t *mcp2515, uint8_t reg, uint8_t values[], uint8_t n)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_WRITE);
-    SPI_transfer(reg);
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_WRITE);
+    SPI_transfer(mcp2515,reg);
     for (uint8_t i=0; i<n; i++) {
-        SPI_transfer(values[i]);
+        SPI_transfer(mcp2515,values[i]);
     }
 
   //  HAL_SPI_Transmit(SPI_CAN, values, n, SPI_TIMEOUT);
-    endSPI();
+    endSPI(mcp2515);
 }
 
-void loadTx(uint8_t reg, uint8_t values[], uint8_t n){
-    startSPI();
+void loadTx(mcp2515_t *mcp2515,uint8_t reg, uint8_t values[], uint8_t n){
+    startSPI(mcp2515);
     //SPI_transfer(INSTRUCTION_WRITE);
-    SPI_transfer(reg);
+    SPI_transfer(mcp2515,reg);
     for (uint8_t i=0; i<n; i++) {
-        SPI_transfer(values[i]);
+        SPI_transfer(mcp2515,values[i]);
     }
 
   //  HAL_SPI_Transmit(SPI_CAN, values, n, SPI_TIMEOUT);
-    endSPI();
+    endSPI(mcp2515);
 }
 
-void modifyRegister(uint8_t reg, uint8_t mask, uint8_t data)
+void modifyRegister(mcp2515_t *mcp2515,uint8_t reg, uint8_t mask, uint8_t data)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_BITMOD);
-    SPI_transfer(reg);
-    SPI_transfer(mask);
-    SPI_transfer(data);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_BITMOD);
+    SPI_transfer(mcp2515,reg);
+    SPI_transfer(mcp2515,mask);
+    SPI_transfer(mcp2515,data);
+    endSPI(mcp2515);
 }
 
-
-
-
-uint8_t readRegister(REGISTER reg)
+uint8_t readRegister(mcp2515_t *mcp2515, REGISTER reg)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_READ);
-    SPI_transfer(reg);
-    uint8_t ret = SPI_transfer(0x00);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_READ);
+    SPI_transfer(mcp2515,reg);
+    uint8_t ret = SPI_transfer(mcp2515,0x00);
+    endSPI(mcp2515);
 
     return ret;
 }
 
-void readRegisters(REGISTER reg, uint8_t values[], uint8_t n)
+void readRegisters(mcp2515_t *mcp2515,REGISTER reg, uint8_t values[], uint8_t n)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_READ);
-    SPI_transfer(reg);
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_READ);
+    SPI_transfer(mcp2515,reg);
     // mcp2515 has auto-increment of address-pointer
     for (uint8_t i=0; i<n; i++) {
-        values[i] = SPI_transfer(0x00);
+        values[i] = SPI_transfer(mcp2515,0x00);
     	//HAL_SPI_Receive(&hspi4, values, n, SPI_TIMEOUT);  //Todo, check if the 0x00 from above is needed
     }
-    	endSPI();
+    	endSPI(mcp2515);
 }
 
-void readRx(REGISTER reg, uint8_t values[], uint8_t n){
-    startSPI();
-    SPI_transfer(reg);
+void readRx(mcp2515_t *mcp2515,REGISTER reg, uint8_t values[], uint8_t n){
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,reg);
     // mcp2515 has auto-increment of address-pointer
     for (uint8_t i=0; i<n; i++) {
-        values[i] = SPI_transfer(0x00);
+        values[i] = SPI_transfer(mcp2515,0x00);
     	//HAL_SPI_Receive(&hspi4, values, n, SPI_TIMEOUT);  //Todo, check if the 0x00 from above is needed
     }
-    endSPI();
+    endSPI(mcp2515);
 }
 
-CAN_Error setMode(CANCTRL_REQOP_MODE mode)
+CAN_Error setMode(mcp2515_t *mcp2515,CANCTRL_REQOP_MODE mode)
 {
-
     unsigned long endTime = HAL_GetTick() + 10;
     uint8_t modeMatch = 0;
+
     while (HAL_GetTick() < endTime) {
-    	modifyRegister(MCP_CANCTRL, CANCTRL_REQOP, mode);
-        uint8_t newmode = readRegister(MCP_CANSTAT);
+    	modifyRegister(mcp2515,MCP_CANCTRL, CANCTRL_REQOP, mode);
+        uint8_t newmode = readRegister(mcp2515,MCP_CANSTAT);
         newmode &= CANSTAT_OPMOD;
 
         modeMatch = newmode == mode;
@@ -131,12 +123,11 @@ CAN_Error setMode(CANCTRL_REQOP_MODE mode)
     }
 
     return modeMatch ? ERROR_OK : ERROR_FAIL;
-
 }
 
-CAN_Error setConfigMode()
+CAN_Error setConfigMode(mcp2515_t *mcp2515)
 {
-    return setMode(CANCTRL_REQOP_CONFIG);
+    return setMode(mcp2515,CANCTRL_REQOP_CONFIG);
 }
 
 void prepareId(uint8_t *buffer, uint8_t ext, uint32_t id)
@@ -159,18 +150,18 @@ void prepareId(uint8_t *buffer, uint8_t ext, uint32_t id)
     }
 }
 
-uint8_t getStatus(void)
+uint8_t MCP_getStatus(mcp2515_t *mcp2515)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_READ_STATUS);
-    uint8_t i = SPI_transfer(0x00);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_READ_STATUS);
+    uint8_t i = SPI_transfer(mcp2515,0x00);
+    endSPI(mcp2515);
     return i;
 }
 
-CAN_Error MCP_setFilterMask(MASK mask, uint8_t ext, uint32_t ulData)
+CAN_Error MCP_setFilterMask(mcp2515_t *mcp2515,MASK mask, uint8_t ext, uint32_t ulData)
 {
-	CAN_Error res = setConfigMode();
+	CAN_Error res = setConfigMode(mcp2515);
     if (res != ERROR_OK) {
         return res;
     }
@@ -186,14 +177,14 @@ CAN_Error MCP_setFilterMask(MASK mask, uint8_t ext, uint32_t ulData)
             return ERROR_FAIL;
     }
 
-    setRegisters(reg, tbufdata, 4);
+    setRegisters(mcp2515,reg, tbufdata, 4);
 
     return ERROR_OK;
 }
 
-CAN_Error MCP_setFilter(RXF num, uint8_t ext, uint32_t ulData)
+CAN_Error MCP_setFilter(mcp2515_t *mcp2515,RXF num, uint8_t ext, uint32_t ulData)
 {
-    CAN_Error res = setConfigMode();
+    CAN_Error res = setConfigMode(mcp2515);
     if (res != ERROR_OK) {
         return res;
     }
@@ -213,37 +204,37 @@ CAN_Error MCP_setFilter(RXF num, uint8_t ext, uint32_t ulData)
 
     uint8_t tbufdata[4];
     prepareId(tbufdata, ext, ulData);
-    setRegisters(reg, tbufdata, 4);
+    setRegisters(mcp2515,reg, tbufdata, 4);
 
     return ERROR_OK;
 }
 
-CAN_Error MCP2515_reset(void)
+CAN_Error MCP2515_reset(mcp2515_t *mcp2515)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_RESET);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_RESET);
+    endSPI(mcp2515);
 
 
     HAL_Delay(10);
 
     uint8_t zeros[14];
     memset(zeros, 0, sizeof(zeros));
-    setRegisters(MCP_TXB0CTRL, zeros, 14);
-    setRegisters(MCP_TXB1CTRL, zeros, 14);
-    setRegisters(MCP_TXB2CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB0CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB1CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB2CTRL, zeros, 14);
 
-    setRegister(MCP_RXB0CTRL, 0);
-    setRegister(MCP_RXB1CTRL, 0);
+    setRegister(mcp2515,MCP_RXB0CTRL, 0);
+    setRegister(mcp2515,MCP_RXB1CTRL, 0);
 
-    setRegister(MCP_CANINTE, CANINTF_RX0IF | CANINTF_RX1IF | CANINTF_ERRIF | CANINTF_MERRF);
+    setRegister(mcp2515,MCP_CANINTE, CANINTF_RX0IF | CANINTF_RX1IF | CANINTF_ERRIF | CANINTF_MERRF);
 
     // receives all valid messages using either Standard or Extended Identifiers that
     // meet filter criteria. RXF0 is applied for RXB0, RXF1 is applied for RXB1
-    modifyRegister(MCP_RXB0CTRL,
+    modifyRegister(mcp2515,MCP_RXB0CTRL,
                    RXBnCTRL_RXM_MASK | RXB0CTRL_BUKT | RXB0CTRL_FILHIT_MASK,
                    RXBnCTRL_RXM_STDEXT | RXB0CTRL_BUKT | RXB0CTRL_FILHIT);
-    modifyRegister(MCP_RXB1CTRL,
+    modifyRegister(mcp2515,MCP_RXB1CTRL,
                    RXBnCTRL_RXM_MASK | RXB1CTRL_FILHIT_MASK,
                    RXBnCTRL_RXM_STDEXT | RXB1CTRL_FILHIT);
 
@@ -253,7 +244,7 @@ CAN_Error MCP2515_reset(void)
     RXF filters[] = {RXF0, RXF1, RXF2, RXF3, RXF4, RXF5};
     for (uint8_t i=0; i<6; i++) {
         uint8_t ext = (i == 1);
-        CAN_Error result = MCP_setFilter(filters[i], ext, 0);
+        CAN_Error result = MCP_setFilter(mcp2515,filters[i], ext, 0);
         if (result != ERROR_OK) {
             return result;
         }
@@ -261,7 +252,7 @@ CAN_Error MCP2515_reset(void)
 
     MASK masks[] = {MASK0, MASK1};
     for (int i=0; i<2; i++) {
-    	CAN_Error result = MCP_setFilterMask(masks[i], 1, 0);
+    	CAN_Error result = MCP_setFilterMask(mcp2515,masks[i], 1, 0);
         if (result != ERROR_OK) {
             return result;
         }
@@ -270,31 +261,31 @@ CAN_Error MCP2515_reset(void)
     return ERROR_OK;
 }
 
-CAN_Error MCP_reset(void)
+CAN_Error MCP_reset(mcp2515_t *mcp2515)
 {
-    startSPI();
-    SPI_transfer(INSTRUCTION_RESET);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,INSTRUCTION_RESET);
+    endSPI(mcp2515);
 
     HAL_Delay(10);
 
     uint8_t zeros[14];
     memset(zeros, 0, sizeof(zeros));
-    setRegisters(MCP_TXB0CTRL, zeros, 14);
-    setRegisters(MCP_TXB1CTRL, zeros, 14);
-    setRegisters(MCP_TXB2CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB0CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB1CTRL, zeros, 14);
+    setRegisters(mcp2515,MCP_TXB2CTRL, zeros, 14);
 
-    setRegister(MCP_RXB0CTRL, 0);
-    setRegister(MCP_RXB1CTRL, 0);
+    setRegister(mcp2515,MCP_RXB0CTRL, 0);
+    setRegister(mcp2515,MCP_RXB1CTRL, 0);
 
-    setRegister(MCP_CANINTE, CANINTF_RX0IF | CANINTF_RX1IF | CANINTF_ERRIF | CANINTF_MERRF);
+    setRegister(mcp2515,MCP_CANINTE, CANINTF_RX0IF | CANINTF_RX1IF | CANINTF_ERRIF | CANINTF_MERRF);
 
     // receives all valid messages using either Standard or Extended Identifiers that
     // meet filter criteria. RXF0 is applied for RXB0, RXF1 is applied for RXB1
-    modifyRegister(MCP_RXB0CTRL,
+    modifyRegister(mcp2515,MCP_RXB0CTRL,
                    RXBnCTRL_RXM_MASK | RXB0CTRL_BUKT | RXB0CTRL_FILHIT_MASK,
                    RXBnCTRL_RXM_STDEXT | RXB0CTRL_BUKT | RXB0CTRL_FILHIT);
-    modifyRegister(MCP_RXB1CTRL,
+    modifyRegister(mcp2515,MCP_RXB1CTRL,
                    RXBnCTRL_RXM_MASK | RXB1CTRL_FILHIT_MASK,
                    RXBnCTRL_RXM_STDEXT | RXB1CTRL_FILHIT);
 
@@ -304,7 +295,7 @@ CAN_Error MCP_reset(void)
     RXF filters[] = {RXF0, RXF1, RXF2, RXF3, RXF4, RXF5};
     for (int i=0; i<6; i++) {
         uint8_t ext = (i == 1);
-        CAN_Error result = MCP_setFilter(filters[i], ext, 0);
+        CAN_Error result = MCP_setFilter(mcp2515,filters[i], ext, 0);
         if (result != ERROR_OK) {
             return result;
         }
@@ -312,7 +303,7 @@ CAN_Error MCP_reset(void)
 
     MASK masks[] = {MASK0, MASK1};
     for (int i=0; i<2; i++) {
-    	CAN_Error result = MCP_setFilterMask(masks[i], 1, 0);
+    	CAN_Error result = MCP_setFilterMask(mcp2515,masks[i], 1, 0);
         if (result != ERROR_OK) {
             return result;
         }
@@ -321,36 +312,35 @@ CAN_Error MCP_reset(void)
     return ERROR_OK;
 }
 
-CAN_Error MCP_setListenOnlyMode()
-{
-    return setMode(CANCTRL_REQOP_LISTENONLY);
+CAN_Error MCP_setMode(mcp2515_t *mcp2515) {
+
+    CAN_Error myError;
+
+    switch (mcp2515->mode) {
+        case MODE_LISTEN_ONLY: myError=setMode(mcp2515,CANCTRL_REQOP_LISTENONLY);
+        break;
+        case MODE_LOOPBACK: myError=setMode(mcp2515,CANCTRL_REQOP_LOOPBACK);
+        break;
+        case MODE_SLEEP: myError=setMode(mcp2515,CANCTRL_REQOP_SLEEP);
+        break;
+        case MODE_NORMAL: myError=setMode(mcp2515,CANCTRL_REQOP_NORMAL);
+        break;
+        default: myError=setMode(mcp2515,CANCTRL_REQOP_NORMAL);
+        break;
+    }
+    return myError;
 }
 
-CAN_Error MCP_setSleepMode()
+CAN_Error MCP_setBitrate(mcp2515_t *mcp2515,CAN_SPEED canSpeed)
 {
-    return setMode(CANCTRL_REQOP_SLEEP);
-}
-
-CAN_Error MCP_setLoopbackMode()
-{
-    return setMode(CANCTRL_REQOP_LOOPBACK);
-}
-
-CAN_Error MCP_setNormalMode()
-{
-    return setMode(CANCTRL_REQOP_NORMAL);
-}
-
-CAN_Error MCP_setBitrateClock(CAN_SPEED canSpeed, CAN_CLOCK canClock)
-{
-	CAN_Error error = setConfigMode();
+	CAN_Error error = setConfigMode(mcp2515);
     if (error != ERROR_OK) {
         return error;
     }
 
     uint8_t set, cfg1, cfg2, cfg3;
     set = 1;
-    switch (canClock)
+    switch (mcp2515->clock)
     {
         case (MCP_8MHZ):
         switch (canSpeed)
@@ -619,30 +609,30 @@ CAN_Error MCP_setBitrateClock(CAN_SPEED canSpeed, CAN_CLOCK canClock)
     }
 
     if (set) {
-        setRegister(MCP_CNF1, cfg1);
-        setRegister(MCP_CNF2, cfg2);
-        setRegister(MCP_CNF3, cfg3);
+        setRegister(mcp2515,MCP_CNF1, cfg1);
+        setRegister(mcp2515,MCP_CNF2, cfg2);
+        setRegister(mcp2515,MCP_CNF3, cfg3);
         return ERROR_OK;
     }
     else {
         return ERROR_FAIL;
     }
 }
-
+/*
 CAN_Error MCP_setBitrate( CAN_SPEED canSpeed)
 {
     return MCP_setBitrateClock(canSpeed, MCP_16MHZ);
 }
+*/
 
-
-void MCP_RequestToSend(uint8_t instruction)
+void MCP_RequestToSend(mcp2515_t *mcp2515,uint8_t instruction)
 {
-    startSPI();
-    SPI_transfer(instruction);
-    endSPI();
+    startSPI(mcp2515);
+    SPI_transfer(mcp2515,instruction);
+    endSPI(mcp2515);
 }
 
-CAN_Error MCP_sendMessageTo(TXBn txbn, can_frame *frame)
+CAN_Error MCP_sendMessageTo(mcp2515_t *mcp2515,TXBn txbn, can_frame *frame)
 //TXBm is just 0,1,2 for txbox number
 {
     if (frame->can_dlc > CAN_MAX_DLEN) {
@@ -670,22 +660,22 @@ CAN_Error MCP_sendMessageTo(TXBn txbn, can_frame *frame)
 
    // memcpy(&data[MCP_DATA], frame->data, frame->can_dlc);
 
-    loadTx(load_addr, data, 5 + frame->can_dlc);
+    loadTx(mcp2515,load_addr, data, 5 + frame->can_dlc);
     //setRegisters(load_addr, data, 5 + frame->can_dlc);
 
     //modifyRegister(txbuf->CTRL, TXB_TXREQ, TXB_TXREQ);
     //modifyRegister(rts_addr, TXB_TXREQ, TXB_TXREQ);
-    MCP_RequestToSend(rts_addr);
+    MCP_RequestToSend(mcp2515,rts_addr);
     //setRegister(rts_addr, TXB_TXREQ);
 
-    uint8_t ctrl = readRegister(rts_addr);
+    uint8_t ctrl = readRegister(mcp2515,rts_addr);
     if ((ctrl & (TXB_ABTF | TXB_MLOA | TXB_TXERR)) != 0) {
         return ERROR_FAILTX;
     }
     return ERROR_OK;
 }
 
-CAN_Error MCP_sendMessage(can_frame *frame)
+CAN_Error MCP_sendMessage(mcp2515_t *mcp2515,can_frame *frame)
 {
     if (frame->can_dlc > CAN_MAX_DLEN) {
         return ERROR_FAILTX;
@@ -693,16 +683,16 @@ CAN_Error MCP_sendMessage(can_frame *frame)
 
 
     for (uint8_t i=0; i<N_TXBUFFERS; i++) {
-        uint8_t ctrlval = readRegister((i+3)<<4);
+        uint8_t ctrlval = readRegister(mcp2515,(i+3)<<4);
         if ( (ctrlval & TXB_TXREQ) == 0 ) {
-            return MCP_sendMessageTo(i, frame);
+            return MCP_sendMessageTo(mcp2515,i, frame);
         }
     }
 
     return ERROR_ALLTXBUSY;
 }
 
-CAN_Error MCP_readMessageFrom(RXBn rxbn, can_frame *frame)
+CAN_Error MCP_readMessageFrom(mcp2515_t *mcp2515,RXBn rxbn, can_frame *frame)
 {
 
 
@@ -710,7 +700,7 @@ CAN_Error MCP_readMessageFrom(RXBn rxbn, can_frame *frame)
 
     rx_reg_t rxReg;
 
-    readRx(readCommand, rxReg.rx_reg_array, sizeof(rxReg.rx_reg_array));
+    readRx(mcp2515,readCommand, rxReg.rx_reg_array, sizeof(rxReg.rx_reg_array));
 
     uint32_t id = (rxReg.rx_reg_array[MCP_SIDH]<<3) + (rxReg.rx_reg_array[MCP_SIDL]>>5);
 
@@ -728,7 +718,7 @@ CAN_Error MCP_readMessageFrom(RXBn rxbn, can_frame *frame)
 
 
     //0x60 or 0x70
-    uint8_t ctrl = readRegister((rxbn + 6) << 4);
+    uint8_t ctrl = readRegister(mcp2515,(rxbn + 6) << 4);
     if (ctrl & RXBnCTRL_RTR) {
         id |= CAN_RTR_FLAG;
     }
@@ -747,20 +737,20 @@ CAN_Error MCP_readMessageFrom(RXBn rxbn, can_frame *frame)
 
 
     //Clear the inbox interrupt, 0x1 or 0x2
-    modifyRegister(MCP_CANINTF, rxbn + 1, 0);
+    modifyRegister(mcp2515,MCP_CANINTF, rxbn + 1, 0);
 
     return ERROR_OK;
 }
 
-CAN_Error MCP_readMessage(can_frame *frame)
+CAN_Error MCP_readMessage(mcp2515_t *mcp2515,can_frame *frame)
 {
 	CAN_Error rc;
-    uint8_t stat = getStatus();
+    uint8_t stat = MCP_getStatus(mcp2515);
 
     if ( stat & STAT_RX0IF ) {
-        rc = MCP_readMessageFrom(RXB0, frame);
+        rc = MCP_readMessageFrom(mcp2515,RXB0, frame);
     } else if ( stat & STAT_RX1IF ) {
-        rc = MCP_readMessageFrom(RXB1, frame);
+        rc = MCP_readMessageFrom(mcp2515,RXB1, frame);
     } else {
         rc = ERROR_NOMSG;
     }
@@ -768,9 +758,9 @@ CAN_Error MCP_readMessage(can_frame *frame)
     return rc;
 }
 
-uint8_t MCP_checkReceive(void)
+uint8_t MCP_checkReceive(mcp2515_t *mcp2515)
 {
-    uint8_t res = getStatus();
+    uint8_t res = MCP_getStatus(mcp2515);
     if ( res & STAT_RXIF_MASK ) {
         return 1;
     } else {
@@ -778,14 +768,14 @@ uint8_t MCP_checkReceive(void)
     }
 }
 
-uint8_t MCP_getErrorFlags(void)
+uint8_t MCP_getErrorFlags(mcp2515_t *mcp2515)
 {
-    return readRegister(MCP_EFLG);
+    return readRegister(mcp2515,MCP_EFLG);
 }
 
-uint8_t MCP_checkError(void)
+uint8_t MCP_checkError(mcp2515_t *mcp2515)
 {
-    uint8_t eflg = MCP_getErrorFlags();
+    uint8_t eflg = MCP_getErrorFlags(mcp2515);
 
     if ( eflg & EFLG_ERRORMASK ) {
         return 1;
@@ -795,53 +785,53 @@ uint8_t MCP_checkError(void)
 }
 
 
-void MCP_clearRXnOVRFlags(void)
+void MCP_clearRXnOVRFlags(mcp2515_t *mcp2515)
 {
-	modifyRegister(MCP_EFLG, EFLG_RX0OVR | EFLG_RX1OVR, 0);
+	modifyRegister(mcp2515,MCP_EFLG, EFLG_RX0OVR | EFLG_RX1OVR, 0);
 }
 
-uint8_t MCP_getInterrupts(void)
+uint8_t MCP_getInterrupts(mcp2515_t *mcp2515)
 {
-    return readRegister(MCP_CANINTF);
+    return readRegister(mcp2515,MCP_CANINTF);
 }
 
-void MCP_clearInterrupts(void)
+void MCP_clearInterrupts(mcp2515_t *mcp2515)
 {
-    setRegister(MCP_CANINTF, 0);
+    setRegister(mcp2515,MCP_CANINTF, 0);
 }
 
-uint8_t MCP_getInterruptMask(void)
+uint8_t MCP_getInterruptMask(mcp2515_t *mcp2515)
 {
-    return readRegister(MCP_CANINTE);
+    return readRegister(mcp2515,MCP_CANINTE);
 }
 
-void MCP_clearTXInterrupts(void)
+void MCP_clearTXInterrupts(mcp2515_t *mcp2515)
 {
-    modifyRegister(MCP_CANINTF, (CANINTF_TX0IF | CANINTF_TX1IF | CANINTF_TX2IF), 0);
+    modifyRegister(mcp2515,MCP_CANINTF, (CANINTF_TX0IF | CANINTF_TX1IF | CANINTF_TX2IF), 0);
 }
 
-void MCP_clearRXnOVR(void)
+void MCP_clearRXnOVR(mcp2515_t *mcp2515)
 {
-	uint8_t eflg = MCP_getErrorFlags();
+	uint8_t eflg = MCP_getErrorFlags(mcp2515);
 	if (eflg != 0) {
-		MCP_clearRXnOVRFlags();
-		MCP_clearInterrupts();
+		MCP_clearRXnOVRFlags(mcp2515);
+		MCP_clearInterrupts(mcp2515);
 		//modifyRegister(MCP_CANINTF, CANINTF_ERRIF, 0);
 	}
 
 }
 
-void MCP_clearMERR()
+void MCP_clearMERR(mcp2515_t *mcp2515)
 {
 	//modifyRegister(MCP_EFLG, EFLG_RX0OVR | EFLG_RX1OVR, 0);
 	//clearInterrupts();
-	modifyRegister(MCP_CANINTF, CANINTF_MERRF, 0);
+	modifyRegister(mcp2515,MCP_CANINTF, CANINTF_MERRF, 0);
 }
 
-void MCP_clearERRIF()
+void MCP_clearERRIF(mcp2515_t *mcp2515)
 {
     //modifyRegister(MCP_EFLG, EFLG_RX0OVR | EFLG_RX1OVR, 0);
     //clearInterrupts();
-    modifyRegister(MCP_CANINTF, CANINTF_ERRIF, 0);
+    modifyRegister(mcp2515,MCP_CANINTF, CANINTF_ERRIF, 0);
 }
 
